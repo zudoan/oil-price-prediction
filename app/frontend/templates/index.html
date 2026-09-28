@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ app_name }} — Singapore Energy Intelligence</title>
+  <meta name="description" content="Hệ thống Trí tuệ Nhân tạo Dự báo Giá Xăng dầu Singapore MOPS dựa trên Residual Deep Learning">
+  
+  <!-- CSS -->
+  <link rel="stylesheet" href="/static/css/dashboard.css">
+  <!-- ApexCharts CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+</head>
+<body>
+
+  <!-- Top Navbar -->
+  <header class="navbar">
+    <div class="nav-brand">
+      <div class="brand-icon">
+        <svg viewBox="0 0 24 24">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 14.5v-3.75h3l-4-6-4 6h3v3.75z"/>
+        </svg>
+      </div>
+      <div class="brand-text">
+        <h1>PETROFORECAST AI</h1>
+        <p>SINGAPORE MOPS ENERGY TRADING PLATFORM</p>
+      </div>
+    </div>
+
+    <div class="nav-status">
+      <div class="status-pill">
+        <div class="pulse-dot"></div>
+        <span>TRADING ACTIVE · CHỐT PHIÊN: <span id="headerLastDate">04/09/2026</span></span>
+      </div>
+      <div class="hardware-pill" id="hardwareTag">{{ hardware }}</div>
+      <button class="btn-primary" id="btnLiveForecast">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+        </svg>
+        Dự báo Phiên T+1
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="container">
+
+    <!-- Hero Banner Card -->
+    <section class="hero-card">
+      <img src="/static/images/petro_banner.jpg" alt="PetroForecast AI Intelligence" class="hero-banner-img">
+      <div class="hero-overlay">
+        <div class="hero-badge">Deep Learning Engine v2.0 · Localhost Production</div>
+        <h2>Hệ Thống Trí Tuệ Nhân Tạo Dự Báo Giá Xăng Dầu Singapore</h2>
+        <p>Ứng dụng kiến trúc đột phá <b>Residual Deep Learning (Skip Connection)</b> giải quyết triệt để độ trễ pha, kết hợp <b>Crack Spreads chuyên ngành lọc dầu</b> và <b>Ensemble Blending</b>.</p>
+        <div class="hero-stats-row">
+          <div class="stat-chip">Sai số trung bình: <span class="val">MAPE 1.66%</span></div>
+          <div class="stat-chip">Hệ số giải thích: <span class="val">R² = 0.9751</span></div>
+          <div class="stat-chip">Sai số tuyệt đối: <span class="val">MAE 1.89$</span></div>
+          <div class="stat-chip">Độ trễ phản hồi: <span class="val">&lt; 25 ms</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Market Mode Switcher -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 14px;">
+      <div class="market-switcher">
+        <button class="market-switch-btn active" id="btnModeSG">🇸🇬 Thị Trường Singapore (USD/thùng)</button>
+        <button class="market-switch-btn" id="btnModeVN">🇻🇳 Giá Bán Lẻ Việt Nam (VND/lít)</button>
+      </div>
+      <div style="font-size: 0.82rem; color: #94a3b8; display: flex; align-items: center; gap: 8px;">
+        <span style="display: inline-block; width: 6px; height: 6px; background: #38bdf8; border-radius: 50%;"></span>
+        Quy chế định giá: <b>Nghị định 80/2023/NĐ-CP &amp; Nghị quyết 42/2023/UBTVQH15</b>
+      </div>
+    </div>
+
+    <!-- Section 1: Singapore KPI Grid (USD/bbl) -->
+    <div id="sectionSingaporeKPI">
+      <section class="kpi-grid">
+        <!-- MG95 -->
+        <div class="kpi-card" id="card-MG95">
+          <div class="kpi-card-header">
+            <div>
+              <div class="product-tag">MOGAS 95</div>
+              <div class="product-sub">Xăng Không Chì Cao Cấp</div>
+            </div>
+            <span class="trend-badge trend-bullish">▲ TĂNG</span>
+          </div>
+          <div class="price-main">--.--$</div>
+          <div class="price-forecast-row">
+            <span class="forecast-label">Dự báo T+1:</span>
+            <span class="forecast-val">--.--$</span>
+            <span class="delta-pill delta-pos">+0.00$</span>
+          </div>
+          <div class="sparkline-box">
+            <canvas class="sparkline-canvas"></canvas>
+          </div>
+          <div class="card-metrics-row">
+            <span>MAE: <b>1.55$</b></span>
+            <span>MAPE: <b>1.53%</b></span>
+            <span>R²: <b>0.9754</b></span>
+          </div>
+        </div>
+
+        <!-- MG92 -->
+        <div class="kpi-card" id="card-MG92">
+          <div class="kpi-card-header">
+            <div>
+              <div class="product-tag">MOGAS 92</div>
+              <div class="product-sub">Xăng Không Chì Tiêu Chuẩn</div>
+            </div>
+            <span class="trend-badge trend-bullish">▲ TĂNG</span>
+          </div>
+          <div class="price-main">--.--$</div>
+          <div class="price-forecast-row">
+            <span class="forecast-label">Dự báo T+1:</span>
+            <span class="forecast-val">--.--$</span>
+            <span class="delta-pill delta-pos">+0.00$</span>
+          </div>
+          <div class="sparkline-box">
+            <canvas class="sparkline-canvas"></canvas>
+          </div>
+          <div class="card-metrics-row">
+            <span>MAE: <b>1.50$</b></span>
+            <span>MAPE: <b>1.55%</b></span>
+            <span>R²: <b>0.9756</b></span>
+          </div>
+        </div>
+
+        <!-- DO 0.001% -->
+        <div class="kpi-card" id="card-DO_0001">
+          <div class="kpi-card-header">
+            <div>
+              <div class="product-tag">DO 0.001%</div>
+              <div class="product-sub">Dầu Diesel Gasoil 10ppm</div>
+            </div>
+            <span class="trend-badge trend-bullish">▲ TĂNG</span>
+          </div>
+          <div class="price-main">--.--$</div>
+          <div class="price-forecast-row">
+            <span class="forecast-label">Dự báo T+1:</span>
+            <span class="forecast-val">--.--$</span>
+            <span class="delta-pill delta-pos">+0.00$</span>
+          </div>
+          <div class="sparkline-box">
+            <canvas class="sparkline-canvas"></canvas>
+          </div>
+          <div class="card-metrics-row">
+            <span>MAE: <b>2.26$</b></span>
+            <span>MAPE: <b>1.77%</b></span>
+            <span>R²: <b>0.9758</b></span>
+          </div>
+        </div>
+
+        <!-- DO 0.05% -->
+        <div class="kpi-card" id="card-DO_005">
+          <div class="kpi-card-header">
+            <div>
+              <div class="product-tag">DO 0.05%</div>
+              <div class="product-sub">Dầu Diesel Gasoil 500ppm</div>
+            </div>
+            <span class="trend-badge trend-bullish">▲ TĂNG</span>
+          </div>
+          <div class="price-main">--.--$</div>
+          <div class="price-forecast-row">
+            <span class="forecast-label">Dự báo T+1:</span>
+            <span class="forecast-val">--.--$</span>
+            <span class="delta-pill delta-pos">+0.00$</span>
+          </div>
+          <div class="sparkline-box">
+            <canvas class="sparkline-canvas"></canvas>
+          </div>
+          <div class="card-metrics-row">
+            <span>MAE: <b>2.25$</b></span>
+            <span>MAPE: <b>1.80%</b></span>
+            <span>R²: <b>0.9734</b></span>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- Section 2: Vietnam Retail Petroleum Section (VND/lít) -->
+    <div id="sectionVietnamKPI" style="display: none;">
+      <!-- Vietnam Cycle Announcement Banner -->
+      <div class="vn-cycle-banner">
+        <div class="vn-cycle-title">
+          <span class="vn-flag-badge">🇻🇳</span>
+          <div>
+            <h4>BẢN TIN ĐIỀU HÀNH GIÁ XĂNG DẦU VIỆT NAM (LIÊN BỘ CÔNG THƯƠNG - TÀI CHÍNH)</h4>
+            <p>Dự báo kỳ điều hành thứ Năm tới (ngày <b id="vnNextCycleDate" style="color: #fef08a;">--/--/----</b>) dựa trên bình quân giá thành phẩm Singapore 7 ngày qua.</p>
+          </div>
+        </div>
+        <div class="vn-fx-control">
+          <span>Tỷ giá USD/VND:</span>
+          <input type="number" id="inputVnFx" value="25400" step="50" min="22000" max="32000" class="vn-fx-input">
+          <button class="btn-breakdown" id="btnUpdateVnFx">Cập nhật</button>
+        </div>
+      </div>
+
+      <!-- Vietnam KPI Grid -->
+      <section class="kpi-grid">
+        <!-- VN MG95 -->
+        <div class="kpi-card" id="card-vn-MG95">
+          <div class="kpi-card-header">
+            <div>
+              <div class="product-tag" style="color: #fca5a5;">RON 95-III</div>
+              <div class="product-sub">Xăng Không Chì Cao Cấp (Petrolimex)</div>
+            </div>
+            <button class="btn-breakdown btn-show-tax" data-code="MG95">Thuế phí</button>
+          </div>
+          <div class="vn-price-main">--.--- đ/lít</div>
+          <div class="price-forecast-row">
+            <span class="forecast-label">Dự báo T+1:</span>
+            <span class="forecast-val" style="color: #fef08a;">--.--- đ</span>
+            <span class="delta-pill delta-pos">+0 đ</span>
+          </div>
+          <div class="sparkline-box">
+            <canvas class="sparkline-canvas"></canvas>
+          </div>
+          <div class="card-metrics-row">
+            <span class="vn-cycle-alert vn-alert-increase">DỰ KIẾN KỲ TỚI: +--- đ</span>
+          </div>
+        </div>
+
+        <!-- VN MG92 -->
+        <div class="kpi-card" id="card-vn-MG92">
+          <div class="kpi-card-header">
+            <div>
+              <div class="product-tag" style="color: #fca5a5;">E5 RON 92-II</div>
+              <div class="product-sub">Xăng Nhiên Liệu Sinh Học E5</div>
+            </div>
+            <button class="btn-breakdown btn-show-tax" data-code="MG92">Thuế phí</button>
+          </div>
+          <div class="vn-price-main">--.--- đ/lít</div>
+          <div class="price-forecast-row">
+            <span class="forecast-label">Dự báo T+1:</span>
+            <span class="forecast-val" style="color: #fef08a;">--.--- đ</span>
+            <span class="delta-pill delta-pos">+0 đ</span>
+          </div>
+          <div class="sparkline-box">
+            <canvas class="sparkline-canvas"></canvas>
+          </div>
+          <div class="card-metrics-row">
+            <span class="vn-cycle-alert vn-alert-increase">DỰ KIẾN KỲ TỚI: +--- đ</span>
+          </div>
+        </div>
+
+        <!-- VN DO 0.001% -->
+        <div class="kpi-card" id="card-vn-DO_0001">
+          <div class="kpi-card-header">
+            <div>
+              <div class="product-tag" style="color: #93c5fd;">DO 0.001S-V</div>
+              <div class="product-sub">Dầu Diesel Euro 5 Cao Cấp</div>
+            </div>
+            <button class="btn-breakdown btn-show-tax" data-code="DO_0001">Thuế phí</button>
+          </div>
+          <div class="vn-price-main">--.--- đ/lít</div>
+          <div class="price-forecast-row">
+            <span class="forecast-label">Dự báo T+1:</span>
+            <span class="forecast-val" style="color: #fef08a;">--.--- đ</span>
+            <span class="delta-pill delta-pos">+0 đ</span>
+          </div>
+          <div class="sparkline-box">
+            <canvas class="sparkline-canvas"></canvas>
+          </div>
+          <div class="card-metrics-row">
+            <span class="vn-cycle-alert vn-alert-increase">DỰ KIẾN KỲ TỚI: +--- đ</span>
+          </div>
+        </div>
+
+        <!-- VN DO 0.05% -->
+        <div class="kpi-card" id="card-vn-DO_005">
+          <div class="kpi-card-header">
+            <div>
+              <div class="product-tag" style="color: #93c5fd;">DO 0.05S-II</div>
+              <div class="product-sub">Dầu Diesel Tiêu Chuẩn Phổ Thông</div>
+            </div>
+            <button class="btn-breakdown btn-show-tax" data-code="DO_005">Thuế phí</button>
+          </div>
+          <div class="vn-price-main">--.--- đ/lít</div>
+          <div class="price-forecast-row">
+            <span class="forecast-label">Dự báo T+1:</span>
+            <span class="forecast-val" style="color: #fef08a;">--.--- đ</span>
+            <span class="delta-pill delta-pos">+0 đ</span>
+          </div>
+          <div class="sparkline-box">
+            <canvas class="sparkline-canvas"></canvas>
+          </div>
+          <div class="card-metrics-row">
+            <span class="vn-cycle-alert vn-alert-increase">DỰ KIẾN KỲ TỚI: +--- đ</span>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- Analytics Section: Chart & Simulation -->
+    <section class="analytics-section">
+      <!-- Main Chart Panel -->
+      <div class="panel-card">
+        <div class="panel-header">
+          <div class="panel-title">
+            <h3>Biểu Đồ Xu Hướng Giá Thực Tế vs Dự Báo AI</h3>
+            <span>(Tập Kiểm Định Độc Lập Test Set 2024–2026)</span>
+          </div>
+          <div class="chart-controls">
+            <button class="btn-filter active" data-product="MG95">MG95</button>
+            <button class="btn-filter" data-product="MG92">MG92</button>
+            <button class="btn-filter" data-product="DO_0001">DO 0.001%</button>
+            <button class="btn-filter" data-product="DO_005">DO 0.05%</button>
+          </div>
+        </div>
+        <div id="mainChart"></div>
+      </div>
+
+      <!-- Stress-Testing Scenario Panel -->
+      <div class="panel-card">
+        <div class="panel-header">
+          <div class="panel-title">
+            <h3>Phòng Thí Nghiệm Kịch Bản</h3>
+            <span>(Scenario Stress Testing)</span>
+          </div>
+        </div>
+        <p style="font-size: 0.78rem; color: #94a3b8; margin-bottom: 16px;">
+          Giả lập cú sốc cung cầu thị trường năng lượng toàn cầu để quan sát phản ứng định giá của mô hình Deep Learning.
+        </p>
+
+        <div class="sim-form-group">
+          <div class="sim-label">
+            <span>Cú sốc Xăng (Gasoline Shock):</span>
+            <span class="val" id="gasShockVal">+0.0%</span>
+          </div>
+          <input type="range" class="sim-range" id="gasShockSlider" min="-15" max="15" step="0.5" value="0">
+        </div>
+
+        <div class="sim-form-group">
+          <div class="sim-label">
+            <span>Cú sốc Dầu Diesel (Diesel Shock):</span>
+            <span class="val" id="dieselShockVal">+0.0%</span>
+          </div>
+          <input type="range" class="sim-range" id="dieselShockSlider" min="-15" max="15" step="0.5" value="0">
+        </div>
+
+        <div class="sim-form-group">
+          <div class="sim-label">
+            <span>Hệ số biến động (Volatility):</span>
+            <span class="val" id="volVal">x1.0</span>
+          </div>
+          <input type="range" class="sim-range" id="volSlider" min="0.5" max="2.5" step="0.1" value="1.0">
+        </div>
+
+        <button class="btn-simulate" id="btnSimulate">⚡ Chạy Mô Phỏng Kịch Bản</button>
+
+        <div class="sim-results-box" id="simResultsContainer">
+          <div style="font-size: 0.75rem; color: #64748b; text-align: center; padding: 10px;">
+            Nhấn nút để kích hoạt dự báo theo tham số sốc giả định.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Petroleum Crack Spreads & Architecture Section -->
+    <section class="analytics-section">
+      <!-- Crack Spreads Chart -->
+      <div class="panel-card">
+        <div class="panel-header">
+          <div class="panel-title">
+            <h3>Chỉ Số Chuyên Ngành: Petroleum Crack Spreads</h3>
+            <span>(Tín hiệu Cân bằng Thị trường &amp; Mean-Reversion)</span>
+          </div>
+        </div>
+        <div id="spreadChart"></div>
+      </div>
+
+      <!-- Architecture Card -->
+      <div class="panel-card" style="display: flex; flex-direction: column; justify-content: space-between;">
+        <div class="panel-header">
+          <div class="panel-title">
+            <h3>Đột Phá Kiến Trúc Residual</h3>
+          </div>
+        </div>
+        <div class="arch-card">
+          <h4>Vấn đề "Bẫy trễ 1 nhịp" (Lag Trap):</h4>
+          <p style="margin-bottom: 10px;">
+            Các mô hình RNN/LSTM thông thường thường rơi vào điểm cực tiểu cục bộ: <code>y(t+1) ≈ y(t)</code> (copy giá hôm trước).
+          </p>
+          <h4>Giải pháp Skip Connection của v2:</h4>
+          <p style="margin-bottom: 10px;">
+            Thiết kế lớp nối tắt <code>Add([y_t, delta_y])</code>:
+            <br>
+            <code>ŷ(t+1) = y(t) + Δŷ(t+1)</code>
+          </p>
+          <p>
+            Mạng chỉ cần học độ biến thiên thực sự <b>Δy</b>, giúp triệt tiêu hoàn toàn pha trễ và giảm ngay <b>42% sai số tuyệt đối (MAE)</b>.
+          </p>
+        </div>
+        <div style="margin-top: 16px; display: flex; gap: 10px;">
+          <a href="/docs" target="_blank" class="btn-filter" style="flex: 1; text-align: center; text-decoration: none;">📖 API Docs (Swagger)</a>
+          <a href="/api/health" target="_blank" class="btn-filter" style="flex: 1; text-align: center; text-decoration: none;">🟢 Server Health</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Benchmark Metrics Section -->
+    <section class="metrics-section">
+      <div class="panel-card">
+        <div class="panel-header">
+          <div class="panel-title">
+            <h3>Bảng Đối Chiếu Hiệu Năng Các Mô Hình (Test Set 2024–2026)</h3>
+          </div>
+        </div>
+        <table class="custom-table">
+          <thead>
+            <tr>
+              <th>Mô hình</th>
+              <th>MAE ($/bbl)</th>
+              <th>RMSE ($/bbl)</th>
+              <th>MAPE (%)</th>
+              <th>Hệ số R²</th>
+            </tr>
+          </thead>
+          <tbody id="metricsTableBody">
+            <!-- Dynamic loaded via API -->
+          </tbody>
+        </table>
+      </div>
+
+      <div class="panel-card">
+        <div class="panel-header">
+          <div class="panel-title">
+            <h3>Tài Liệu &amp; Artifacts Đồ Án</h3>
+          </div>
+        </div>
+        <ul style="list-style: none; font-size: 0.82rem; color: #94a3b8; line-height: 2;">
+          <li>📁 <b>Notebook v2 Local:</b> <a href="file:///d:/Thuy_Loi/Nam_4/deep_learning/xangdau/notebooks/petroleum_v2_advanced_local.ipynb" style="color: #38bdf8;">petroleum_v2_advanced_local.ipynb</a></li>
+          <li>📁 <b>Notebook v1 Kaggle:</b> <a href="file:///d:/Thuy_Loi/Nam_4/deep_learning/xangdau/notebooks/petroleum-kagglee74ae2a6ee.ipynb" style="color: #38bdf8;">petroleum-kagglee74ae2a6ee.ipynb</a></li>
+          <li>🛢️ <b>Dữ liệu gốc:</b> <a href="file:///d:/Thuy_Loi/Nam_4/deep_learning/xangdau/data/price_petroleum.xlsx" style="color: #38bdf8;">price_petroleum.xlsx</a> (2008–2026)</li>
+          <li>📊 <b>Báo cáo &amp; Biểu đồ:</b> Thư mục <a href="file:///d:/Thuy_Loi/Nam_4/deep_learning/xangdau/reports/" style="color: #38bdf8;">reports/</a></li>
+          <li>🧠 <b>Mô hình lưu trữ:</b> <a href="file:///d:/Thuy_Loi/Nam_4/deep_learning/xangdau/models/Residual_GRU_final.keras" style="color: #38bdf8;">Residual_GRU_final.keras</a></li>
+        </ul>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Live Forecast Modal -->
+  <div class="modal-backdrop" id="forecastModal">
+    <div class="modal-content">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <div>
+          <h3 style="font-size: 1.25rem; font-weight: 800; color: #fff;">Dự Báo Giá Phiên Tiếp Theo (T+1)</h3>
+          <p style="font-size: 0.78rem; color: #94a3b8;">Ngày dự báo: <b id="modalTargetDate" style="color: #38bdf8;">--/--/----</b> | Độ trễ API: <span id="modalLatency" style="color: #34d399;">-- ms</span></p>
+        </div>
+        <button id="btnCloseModal" style="background: none; border: none; color: #64748b; font-size: 1.5rem; cursor: pointer;">&times;</button>
+      </div>
+
+      <div id="modalForecastList">
+        <!-- Rendered via JS -->
+      </div>
+
+      <div style="text-align: right; margin-top: 16px;">
+        <button class="btn-primary" onclick="document.getElementById('forecastModal').classList.remove('active')">Đóng Cửa Sổ</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Vietnam Tax Breakdown Modal -->
+  <div class="modal-backdrop" id="taxModal">
+    <div class="modal-content" style="max-width: 580px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px;">
+        <div>
+          <h3 style="font-size: 1.2rem; font-weight: 800; color: #fff;" id="taxModalTitle">Cơ Cấu Giá Bán Lẻ Xăng Dầu Việt Nam</h3>
+          <p style="font-size: 0.78rem; color: #94a3b8;">Bóc tách chi tiết thuế &amp; chi phí theo Nghị định 80/2023/NĐ-CP</p>
+        </div>
+        <button id="btnCloseTaxModal" style="background: none; border: none; color: #64748b; font-size: 1.5rem; cursor: pointer;">&times;</button>
+      </div>
+
+      <div id="taxModalBody" style="background: rgba(0, 0, 0, 0.3); border-radius: 8px; padding: 16px; border: 1px solid rgba(255, 255, 255, 0.06);">
+        <!-- Rendered dynamically -->
+      </div>
+
+      <div style="text-align: right; margin-top: 18px;">
+        <button class="btn-primary" onclick="document.getElementById('taxModal').classList.remove('active')">Đóng</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer>
+    <p><b>PetroForecast AI · Singapore Energy Intelligence System v2.0</b></p>
+    <p style="margin-top: 4px; color: #64748b;">Đồ án Chuyên sâu Deep Learning — Trường Đại học Thủy Lợi | Keras 3 + PyTorch CUDA Engine</p>
+  </footer>
+
+  <!-- App Script -->
+  <script src="/static/js/app.js"></script>
+</body>
+</html>
