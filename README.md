@@ -197,8 +197,8 @@ xangdau/
 
 ### Bước 1: Clone kho lưu trữ
 ```bash
-git clone https://github.com/your-username/petroleum-price-forecasting.git
-cd petroleum-price-forecasting
+git clone https://github.com/zudoan/oil-price-prediction.git
+cd oil-price-prediction
 ```
 
 ### Bước 2: Cài đặt thư viện phụ thuộc
