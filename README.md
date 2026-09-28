@@ -1,6 +1,6 @@
-<div align="center">
+ <div align="center">
 
-# 🛢️ PetroForecast AI — Singapore & Vietnam Energy Intelligence Platform
+#  PetroForecast AI — Singapore & Vietnam Energy Intelligence Platform
 ### *Hệ Thống Trí Tuệ Nhân Tạo Dự Báo Giá Xăng Dầu Thị Trường Singapore (MoPS) & Giá Bán Lẻ Việt Nam (Petrolimex)*
 
 [![Python](https://img.shields.io/badge/Python-3.11-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
@@ -18,13 +18,13 @@
 
 <br/>
 
-**[🌐 Trải Nghiệm Dashboard](http://localhost:8000)** • **[📖 Swagger API Docs](http://localhost:8000/docs)** • **[📊 Báo Cáo & Số Liệu](reports/)** • **[📓 Notebooks](notebooks/)**
+**[ Trải Nghiệm Dashboard](http://localhost:8000)** • **[📖 Swagger API Docs](http://localhost:8000/docs)** • **[📊 Báo Cáo & Số Liệu](reports/)** • **[📓 Notebooks](notebooks/)**
 
 </div>
 
 ---
 
-## 📌 1. Giới thiệu tổng quan (Executive Summary)
+##  1. Giới thiệu tổng quan (Executive Summary)
 
 **PetroForecast AI** là giải pháp phần mềm trí tuệ nhân tạo toàn diện từ nghiên cứu mô hình hóa chuỗi thời gian (Deep Learning Time-Series) đến triển khai thành một trạm máy chủ AI (AI Production Server) có giao diện Fintech Dashboard chuẩn công nghiệp.
 
@@ -40,16 +40,16 @@ Hệ thống cung cấp **trí tuệ dự báo kép (Dual-Market Intelligence)**
 
 ---
 
-## 🚀 2. Các đột phá khoa học & Phương pháp luận
+##  2. Các đột phá khoa học & Phương pháp luận
 
-### 🎯 Đột phá 1: Kiến trúc Residual Deep Learning (Triệt tiêu bẫy trễ 1 nhịp)
+###  Đột phá 1: Kiến trúc Residual Deep Learning (Triệt tiêu bẫy trễ 1 nhịp)
 Trong phân tích chuỗi thời gian tài chính có độ nhiễu cao, các mạng hồi quy thông thường (Vanilla RNN/LSTM) thường rơi vào trạng thái "lười biếng": 
 $$\hat{y}_{t+1} \approx y_t \quad (\text{Mô hình trễ 1 bước - Persistence Baseline})$$
 Để giải quyết triệt để vấn đề này, kiến trúc **Residual Skip Connection** được thiết kế để giữ lại mức giá chuẩn hóa $y_t$ tại bước thời gian cuối cùng và chỉ ép mạng nơ-ron học phần gia số biến động thực tế $\Delta \hat{y}_{t+1}$:
 $$\hat{y}_{t+1} = y_t + \text{Dense}(\text{Hidden State})$$
-> 💡 **Kết quả:** Triệt tiêu hoàn toàn hiện tượng lệch pha trễ, **giảm tới 42% sai số tuyệt đối (MAE)** từ 3.25$ xuống **1.89$ / thùng** và đẩy hệ số giải thích $R^2$ lên **0.9751**!
+>  **Kết quả:** Triệt tiêu hoàn toàn hiện tượng lệch pha trễ, **giảm tới 42% sai số tuyệt đối (MAE)** từ 3.25$ xuống **1.89$ / thùng** và đẩy hệ số giải thích $R^2$ lên **0.9751**!
 
-### 🛢️ Đột phá 2: Đặc trưng chuyên ngành Lọc dầu (Petroleum Crack Spreads)
+###  Đột phá 2: Đặc trưng chuyên ngành Lọc dầu (Petroleum Crack Spreads)
 Thay vì sử dụng các đặc trưng kỹ thuật chung chung, mô hình tích hợp các chỉ số giao dịch chuyên sâu của giới thương nhân năng lượng quốc tế:
 - **Premium Spread:** $\text{MG95} - \text{MG92}$ (Độ chênh giá xăng cao cấp).
 - **Quality Spread:** $\text{DO 0.001\%} - \text{DO 0.05\%}$ (Độ chênh chất lượng lưu huỳnh Diesel).
@@ -65,20 +65,20 @@ Mô hình mô phỏng chính xác chu kỳ điều hành Thứ Năm hàng tuần
 
 ---
 
-## 📊 3. Bảng xếp hạng hiệu năng trên tập Test độc lập (2024–2026)
+##  3. Bảng xếp hạng hiệu năng trên tập Test độc lập (2024–2026)
 
 Tập Test bao gồm dữ liệu từ **02/2024 đến 09/2026** (giai đoạn thị trường chịu nhiều cú sốc địa chính trị Trung Đông và cước vận tải biển Biển Đỏ):
 
 | Hạng | Kiến trúc mô hình | MAE ($/thùng) | RMSE ($/thùng) | MAPE (%) | $R^2$ Score | Ghi chú kỹ thuật |
 | :---: | :--- | :---: | :---: | :---: | :---: | :--- |
-| 🥇 | **Residual-GRU v2** | **1.8890 $** | **3.9335 $** | **1.66 %** | **0.9751** | **Quán quân toàn diện** — Hội tụ nhanh, khái quát hóa vượt trội |
-| 🥈 | **Ensemble Blend v2** | **1.8906 $** | **3.9340 $** | **1.66 %** | **0.9751** | Kết hợp 55% GRU + 45% LSTM — Ổn định trước cú sốc |
-| 🥉 | **Residual-LSTM v2** | **1.8990 $** | **3.9427 $** | **1.67 %** | **0.9750** | Ghi nhớ phụ thuộc dài hạn rất tốt |
+| 1 | **Residual-GRU v2** | **1.8890 $** | **3.9335 $** | **1.66 %** | **0.9751** | **Quán quân toàn diện** — Hội tụ nhanh, khái quát hóa vượt trội |
+| 2 | **Ensemble Blend v2** | **1.8906 $** | **3.9340 $** | **1.66 %** | **0.9751** | Kết hợp 55% GRU + 45% LSTM — Ổn định trước cú sốc |
+| 3 | **Residual-LSTM v2** | **1.8990 $** | **3.9427 $** | **1.67 %** | **0.9750** | Ghi nhớ phụ thuộc dài hạn rất tốt |
 | 4 | **Baseline GRU v1 (Kaggle)** | 3.2480 $ | 6.3679 $ | 2.75 % | 0.9422 | Mô hình baseline ban đầu (dự báo giá tuyệt đối) |
 | 5 | **Attention-LSTM v1** | 6.3683 $ | 13.8961 $ | 5.08 % | 0.7281 | Cơ chế attention bị phân tán bởi nhiễu tài chính |
 | 6 | **CNN-LSTM v1** | 7.0715 $ | 14.6478 $ | 5.65 % | 0.6902 | Tầng Conv1D làm lệch pha trễ thời gian |
 
-### 📈 Chi tiết sai số theo từng mặt hàng xăng dầu (Mô hình Residual v2)
+###  Chi tiết sai số theo từng mặt hàng xăng dầu (Mô hình Residual v2)
 
 | Sản phẩm xăng dầu | Tên giao dịch quốc tế | MAE ($/bbl) | RMSE ($/bbl) | MAPE (%) | $R^2$ Score | Độ chính xác |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: |
@@ -99,7 +99,7 @@ Tập Test bao gồm dữ liệu từ **02/2024 đến 09/2026** (giai đoạn t
 
 ---
 
-## 🏛️ 4. Sơ đồ kiến trúc hệ thống (System Architecture)
+##  4. Sơ đồ kiến trúc hệ thống (System Architecture)
 
 ```mermaid
 flowchart TB
@@ -133,7 +133,7 @@ flowchart TB
 
 ---
 
-## 💻 5. Cấu trúc thư mục dự án (Project Hierarchy)
+##  5. Cấu trúc thư mục dự án (Project Hierarchy)
 
 ```
 xangdau/
@@ -188,7 +188,7 @@ xangdau/
 
 ---
 
-## ⚡ 6. Hướng dẫn cài đặt & Khởi chạy (Quickstart)
+##  6. Hướng dẫn cài đặt & Khởi chạy (Quickstart)
 
 ### Yêu cầu hệ thống (Prerequisites):
 - **Hệ điều hành:** Windows 10/11 hoặc Linux (Ubuntu 20.04+).
@@ -208,11 +208,11 @@ pip install -r requirements.txt
 
 ### Bước 3: Khởi chạy Máy chủ Web AI
 
-#### 🟢 Cách 1: Click đúp trên Windows (Khuyên dùng)
+####  Cách 1: Click đúp trên Windows (Khuyên dùng)
 Nhấp đúp chuột trực tiếp vào file:
 👉 **`start_server.bat`**
 
-#### 🟢 Cách 2: Chạy dòng lệnh
+####  Cách 2: Chạy dòng lệnh
 ```bash
 python run_server.py
 ```
@@ -220,13 +220,13 @@ python run_server.py
 
 ### Bước 4: Trải nghiệm hệ thống
 Sau khi khởi động thành công, mở trình duyệt và truy cập:
-* 🖥️ **Giao diện Dashboard:** [http://localhost:8000](http://localhost:8000)
-* 📖 **Tài liệu Swagger API:** [http://localhost:8000/docs](http://localhost:8000/docs)
-* 🟢 **Kiểm tra Health Server:** [http://localhost:8000/api/health](http://localhost:8000/api/health)
+*  **Giao diện Dashboard:** [http://localhost:8000](http://localhost:8000)
+*  **Tài liệu Swagger API:** [http://localhost:8000/docs](http://localhost:8000/docs)
+*  **Kiểm tra Health Server:** [http://localhost:8000/api/health](http://localhost:8000/api/health)
 
 ---
 
-## 🔌 7. Danh mục API RESTful (API Documentation)
+##  7. Danh mục API RESTful (API Documentation)
 
 | Phương thức | Endpoint | Mô tả chức năng | Độ trễ trung bình |
 |:---:|:---|:---|:---:|
