@@ -1,0 +1,17 @@
+Horizon_Days,Horizon_Label,Product,Product_Name,MAE,RMSE,MAPE%,R2
+1,T+1 (1 Ngày),MG95,MOGAS 95 Unleaded,1.59,3.03,1.57,0.9717
+1,T+1 (1 Ngày),MG92,MOGAS 92 Unleaded,1.56,2.83,1.61,0.9722
+1,T+1 (1 Ngày),DO_0001,Gasoil 10ppm (DO 0.001%),2.24,5.05,1.77,0.9747
+1,T+1 (1 Ngày),DO_005,Gasoil 500ppm (DO 0.05%),2.31,5.22,1.86,0.97
+3,T+3 (3 Ngày),MG95,MOGAS 95 Unleaded,3.06,5.25,3.02,0.9151
+3,T+3 (3 Ngày),MG92,MOGAS 92 Unleaded,2.91,4.79,3.01,0.9204
+3,T+3 (3 Ngày),DO_0001,Gasoil 10ppm (DO 0.001%),4.24,9.04,3.35,0.9199
+3,T+3 (3 Ngày),DO_005,Gasoil 500ppm (DO 0.05%),4.15,9.2,3.34,0.9077
+7,T+7 (7 Ngày),MG95,MOGAS 95 Unleaded,4.64,8.13,4.54,0.7986
+7,T+7 (7 Ngày),MG92,MOGAS 92 Unleaded,4.42,7.34,4.54,0.8156
+7,T+7 (7 Ngày),DO_0001,Gasoil 10ppm (DO 0.001%),6.99,14.48,5.48,0.7986
+7,T+7 (7 Ngày),DO_005,Gasoil 500ppm (DO 0.05%),6.87,14.59,5.49,0.7729
+20,T+20 (20 Ngày),MG95,MOGAS 95 Unleaded,7.68,14.24,7.27,0.4077
+20,T+20 (20 Ngày),MG92,MOGAS 92 Unleaded,7.29,12.94,7.25,0.4519
+20,T+20 (20 Ngày),DO_0001,Gasoil 10ppm (DO 0.001%),13.02,26.74,9.75,0.3522
+20,T+20 (20 Ngày),DO_005,Gasoil 500ppm (DO 0.05%),12.73,26.85,9.67,0.2762

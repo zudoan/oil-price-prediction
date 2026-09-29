@@ -63,6 +63,22 @@ Dựa trên phân tích hàm tự tương quan (ACF) và tự tương quan riên
 $$\text{Giá Bán Lẻ} = \left[ \frac{\text{Giá MoPS Singapore} \times \text{USD/VND}}{158.987} + \text{Chi phí CIF} \right] \times (1 + \text{Thuế NK}) \times (1 + \text{Thuế TTĐB}) + \text{Thuế BVMT} + \text{CPKD} + \text{VAT}$$
 Mô hình mô phỏng chính xác chu kỳ điều hành Thứ Năm hàng tuần, cung cấp cảnh báo biến động (Tăng / Giảm bao nhiêu đ/lít) hỗ trợ ra quyết định tiêu dùng và quản trị tồn kho.
 
+### ⏱️ Đột phá 5: Dự Báo Đa Chu Kỳ (Multi-Horizon: T+1, T+3, T+7, T+20)
+Để phục vụ quản trị rủi ro và ra quyết định chiến lược, hệ thống mở rộng kiến trúc **Direct Multi-Horizon Residual Deep Learning**:
+$$\hat{y}_{t+h} = y_t + \Delta \hat{y}_{t+h}, \quad \forall h \in \{1, 2, \dots, 20\}$$
+- **T+1 (1 Ngày):** Khớp lệnh trong phiên / ngày mai ($MAPE = 1.70\%$, $R^2 = 0.9721$).
+- **T+3 (3 Ngày):** Lướt sóng & quản trị vị thế chu kỳ thanh toán T+3 ($MAPE = 3.18\%$, $R^2 = 0.9158$).
+- **T+7 (7 Ngày):** Trọng tâm kỳ điều hành giá xăng dầu Thứ Năm của Liên Bộ Công Thương – Tài chính theo Nghị định 80/2023/NĐ-CP ($MAPE = 5.01\%$, $R^2 = 0.7964$).
+- **T+20 (20 Ngày):** Chu kỳ 1 tháng giao dịch năng lượng, hoạch định ngân sách và dự trữ tồn kho ($MAPE = 8.48\%$, $R^2 = 0.3720$).
+
+| Mốc Dự Báo | Ý Nghĩa Ứng Dụng Thực Tiễn | MAE ($/bbl) | RMSE ($/bbl) | MAPE (%) | $R^2$ Score | Đánh giá |
+| :---: | :--- | :---: | :---: | :---: | :---: | :--- |
+| **T+1 (1 Ngày)** | Khớp lệnh & giao dịch phiên mai | 1.92 $ | 4.03 $ | 1.70 % | 0.9721 | ⭐ Tối ưu intraday |
+| **T+3 (3 Ngày)** | Lướt sóng & hedging ngắn hạn T+3 | 3.59 $ | 7.07 $ | 3.18 % | 0.9158 | ⭐ Quản trị vị thế |
+| **T+7 (7 Ngày)** | **Kỳ điều hành xăng dầu Thứ Năm (NĐ 80/2023)** | **5.73 $** | **11.14 $** | **5.01 %** | **0.7964** | 🎯 **Khuyên dùng điều hành** |
+| **T+20 (20 Ngày)** | Hoạch định ngân sách & tồn kho 1 tháng | 10.18 $ | 20.19 $ | 8.48 % | 0.3720 | 📦 Quản trị tồn kho |
+
+
 ---
 
 ##  3. Bảng xếp hạng hiệu năng trên tập Test độc lập (2024–2026)
@@ -234,11 +250,12 @@ Sau khi khởi động thành công, mở trình duyệt và truy cập:
 | `GET` | `/api/health` | Kiểm tra tình trạng server, GPU phần cứng và số lượng mẫu | < 2 ms |
 | `GET` | `/api/overview` | Lấy dữ liệu 4 sản phẩm, giá chốt phiên và sparkline 20 ngày | < 10 ms |
 | `GET` | `/api/forecast/latest` | Dự báo giá phiên tiếp theo ($T+1$) kèm khoảng tin cậy 95% và khuyến nghị | ~ 8 ms |
+| `GET` | `/api/forecast/multi-horizon?horizon=7` | **Dự báo đa chu kỳ (1, 3, 7, 20 ngày)** kèm quỹ đạo 20 ngày và Fan Chart | ~ 12 ms |
 | `POST` | `/api/forecast/simulate`| Mô phỏng cú sốc thị trường (Gasoline Shock %, Diesel Shock %, Volatility) | ~ 12 ms |
 | `GET` | `/api/historical?limit=180`| Lấy chuỗi dữ liệu thực tế và dự báo vẽ đồ thị ApexCharts | ~ 15 ms |
 | `GET` | `/api/crack-spreads?limit=180`| Lấy chuỗi Crack Spreads và tín hiệu Z-score Mean-reversion | ~ 12 ms |
-| `GET` | `/api/vietnam/forecast?fx_rate=25400`| **Dự báo giá bán lẻ xăng dầu Việt Nam & kỳ điều hành Thứ Năm tới** | ~ 10 ms |
-| `GET` | `/api/metrics` | Bảng xếp hạng khoa học giữa Baseline v1 vs v2 | < 5 ms |
+| `GET` | `/api/vietnam/forecast?horizon=7`| **Dự báo giá bán lẻ xăng dầu Việt Nam theo mốc 1, 3, 7, 20 ngày** | ~ 10 ms |
+| `GET` | `/api/metrics` | Bảng xếp hạng khoa học giữa Baseline v1 vs v2 & Multi-Horizon | < 5 ms |
 
 ---
 

@@ -67,9 +67,32 @@
         <button class="market-switch-btn active" id="btnModeSG">🇸🇬 Thị Trường Singapore (USD/thùng)</button>
         <button class="market-switch-btn" id="btnModeVN">🇻🇳 Giá Bán Lẻ Việt Nam (VND/lít)</button>
       </div>
-      <div style="font-size: 0.82rem; color: #94a3b8; display: flex; align-items: center; gap: 8px;">
-        <span style="display: inline-block; width: 6px; height: 6px; background: #38bdf8; border-radius: 50%;"></span>
-        Quy chế định giá: <b>Nghị định 80/2023/NĐ-CP &amp; Nghị quyết 42/2023/UBTVQH15</b>
+    <!-- Multi-Horizon Selector Bar -->
+    <div class="horizon-control-bar">
+      <div class="horizon-control-left">
+        <span class="horizon-badge-pill">⏱️ CHÂN TRỜI DỰ BÁO</span>
+        <div class="horizon-pill-group">
+          <button class="horizon-btn" data-horizon="1">
+            <span class="hz-tag">T+1</span>
+            <span>1 Ngày</span>
+          </button>
+          <button class="horizon-btn" data-horizon="3">
+            <span class="hz-tag">T+3</span>
+            <span>3 Ngày (Lướt sóng)</span>
+          </button>
+          <button class="horizon-btn active" data-horizon="7">
+            <span class="hz-tag">T+7</span>
+            <span>7 Ngày (Kỳ điều hành)</span>
+          </button>
+          <button class="horizon-btn" data-horizon="20">
+            <span class="hz-tag">T+20</span>
+            <span>20 Ngày (Chu kỳ tháng)</span>
+          </button>
+        </div>
+      </div>
+      <div class="horizon-context-box">
+        <span class="hz-target-date">Ngày đích: <b id="hzTargetDate">--/--/----</b></span>
+        <span class="hz-context-text" id="hzContextDesc">🎯 Dự báo định lượng trước kỳ điều chỉnh giá xăng dầu Thứ Năm hàng tuần (NĐ 80/2023)</span>
       </div>
     </div>
 
@@ -354,6 +377,25 @@
             Nhấn nút để kích hoạt dự báo theo tham số sốc giả định.
           </div>
         </div>
+      </div>
+    </section>
+
+    <!-- Section: Multi-Horizon 20-Day Trajectory Fan Chart -->
+    <section class="analytics-section" style="grid-template-columns: 1fr; margin-bottom: 24px;">
+      <div class="panel-card">
+        <div class="panel-header">
+          <div class="panel-title">
+            <h3>📈 Quỹ Đạo Dự Báo 20 Ngày &amp; Vùng Bất Định (Confidence Fan Chart)</h3>
+            <span>(Đường cong phóng chiếu 20 phiên liên tiếp với dải tin cậy 95% mở rộng theo căn bậc hai thời gian √h)</span>
+          </div>
+          <div class="chart-controls">
+            <button class="btn-traj-filter active" data-product="MG95">MOGAS 95</button>
+            <button class="btn-traj-filter" data-product="MG92">MOGAS 92</button>
+            <button class="btn-traj-filter" data-product="DO_0001">DO 0.001%</button>
+            <button class="btn-traj-filter" data-product="DO_005">DO 0.05%</button>
+          </div>
+        </div>
+        <div id="trajectoryChart" style="min-height: 380px;"></div>
       </div>
     </section>
 

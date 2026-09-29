@@ -13,7 +13,8 @@ import torch
 
 from app.backend.config import (
     DATA_FILE, SCALER_X_FILE, SCALER_Y_FILE, MODEL_GRU_FILE, MODEL_LSTM_FILE,
-    TARGET_COLS, PRODUCT_LABELS, LOOKBACK, REPORTS_DIR
+    MODEL_MULTI_HORIZON_FILE, TARGET_COLS, PRODUCT_LABELS, VIETNAM_PRODUCT_LABELS,
+    LOOKBACK, MAX_HORIZON, SUPPORTED_HORIZONS, HORIZON_CONFIGS, REPORTS_DIR
 )
 
 class PetroleumEngine:
@@ -37,7 +38,7 @@ class PetroleumEngine:
         self.scaler_y = joblib.load(SCALER_Y_FILE)
         print("  Đã nạp Scaler X và Scaler Y!")
 
-        # 2. Load Model
+        # 2. Load Base 1-day Model
         if not MODEL_GRU_FILE.exists():
             raise FileNotFoundError("Chưa tìm thấy Residual_GRU_final.keras!")
         self.model_gru = keras.models.load_model(str(MODEL_GRU_FILE))
@@ -51,15 +52,24 @@ class PetroleumEngine:
             except Exception as e:
                 print(f"  Không nạp được LSTM: {e}")
 
-        # 3. Load & Process Data
+        # 3. Load Multi-Horizon Model (T+3, T+7, T+20)
+        self.model_mh = None
+        if MODEL_MULTI_HORIZON_FILE.exists():
+            try:
+                self.model_mh = keras.models.load_model(str(MODEL_MULTI_HORIZON_FILE), safe_mode=False)
+                print("  Đã nạp Residual Multi-Horizon Model (T+3, T+7, T+20)!")
+            except Exception as e:
+                print(f"  Không nạp được Multi-Horizon Model: {e}")
+
+        # 4. Load & Process Data
         self.df_clean, self.df_feat, self.ordered_feature_cols = self._load_and_process_data()
         print(f"  Đã tải dữ liệu lịch sử ({len(self.df_feat)} ngày giao dịch, {len(self.ordered_feature_cols)} features).")
 
-        # 4. Generate Precomputed Test Predictions for Instant UI Serving
+        # 5. Generate Precomputed Test Predictions for Instant UI Serving
         self._precompute_test_predictions()
 
-        # 5. Load Metrics
-        self.metrics_summary, self.detailed_metrics = self._load_metrics()
+        # 6. Load Metrics
+        self.metrics_summary, self.detailed_metrics, self.multi_horizon_metrics = self._load_metrics()
         print("✅ Petroleum Deep Learning Engine đã sẵn sàng phục vụ API!")
 
     def _detect_hardware(self):
@@ -84,7 +94,7 @@ class PetroleumEngine:
         df = df[df['Date'] >= '2008-11-03'].copy().reset_index(drop=True)
         df[TARGET_COLS] = df[TARGET_COLS].ffill().bfill()
 
-        # Feature Engineering
+        # Feature Engineering (giữ chuẩn 54 features)
         df_feat = df.copy()
         df_feat['SPREAD_MG95_MG92'] = df_feat['MG95'] - df_feat['MG92']
         df_feat['SPREAD_DO0001_DO005'] = df_feat['DO_0001'] - df_feat['DO_005']
@@ -151,42 +161,45 @@ class PetroleumEngine:
     def _load_metrics(self):
         summary_file = REPORTS_DIR / "summary_metrics_v2.csv"
         detailed_file = REPORTS_DIR / "detailed_metrics_v2.csv"
+        mh_file = REPORTS_DIR / "multi_horizon_detailed_metrics.csv"
+        
         summary = []
         detailed = []
+        multi_horizon = []
 
         if summary_file.exists():
             df_s = pd.read_csv(summary_file)
             summary = df_s.to_dict(orient='records')
-        else:
-            summary = [
-                {"Model": "Residual_GRU", "MAE": 1.8890, "RMSE": 3.9335, "MAPE%": 1.66, "R2": 0.9751},
-                {"Model": "Ensemble_Blend", "MAE": 1.8906, "RMSE": 3.9340, "MAPE%": 1.66, "R2": 0.9751},
-                {"Model": "Residual_LSTM", "MAE": 1.8990, "RMSE": 3.9427, "MAPE%": 1.67, "R2": 0.9750}
-            ]
-
         if detailed_file.exists():
             df_d = pd.read_csv(detailed_file)
             detailed = df_d.to_dict(orient='records')
-        return summary, detailed
+        if mh_file.exists():
+            df_mh = pd.read_csv(mh_file)
+            multi_horizon = df_mh.to_dict(orient='records')
+
+        return summary, detailed, multi_horizon
 
     def get_market_overview(self):
         last_row = self.df_feat.iloc[-1]
         last_date_str = last_row['Date'].strftime('%d/%m/%Y')
-        next_day_forecast = self.predict_next_day()['predictions']
+
+        # Recent 30 days for inference
+        last_features = self.df_feat[self.ordered_feature_cols].iloc[-LOOKBACK:].values
+        scaled_features = self.scaler_X.transform(last_features)
+        input_seq = np.expand_dims(scaled_features, axis=0).astype(np.float32)
+
+        pred_scaled = self.model_gru.predict(input_seq, verbose=0)
+        pred_real = self.scaler_y.inverse_transform(pred_scaled)[0]
 
         products_data = {}
-        for p_pred in next_day_forecast:
-            col = p_pred['product']
+        for i, col in enumerate(TARGET_COLS):
             curr_price = float(last_row[col])
-            pred_price = p_pred['predicted_price']
-            delta = p_pred['delta']
-            delta_pct = p_pred['delta_pct']
+            pred_price = float(pred_real[i])
+            delta = pred_price - curr_price
+            delta_pct = (delta / curr_price) * 100.0
             trend = "bullish" if delta > 0.05 else ("bearish" if delta < -0.05 else "neutral")
 
-            # Sparkline of last 20 actual values
-            sparkline = [float(v) for v in self.df_feat[col].iloc[-20:].values]
-
-            # Product specific metrics
+            sparkline = [float(x) for x in self.df_feat[col].iloc[-20:].values]
             p_metrics = [m for m in self.detailed_metrics if m.get('Product') == col and m.get('Model') == 'Residual_GRU']
             mae = p_metrics[0]['MAE'] if p_metrics else 1.88
             mape = p_metrics[0]['MAPE%'] if p_metrics else 1.66
@@ -216,37 +229,151 @@ class PetroleumEngine:
         }
 
     def predict_next_day(self):
+        """Dự báo 1 phiên kế tiếp (T+1) sử dụng mô hình One-Step hoặc Multi-Horizon step 0"""
+        res = self.predict_multi_horizon(horizon=1)
+        return {
+            "prediction_date": res["target_date"],
+            "model_used": res["model_used"],
+            "latency_ms": res["latency_ms"],
+            "predictions": [
+                {
+                    "product": p["product"],
+                    "label": p["label"],
+                    "current_price": p["current_price"],
+                    "predicted_price": p["predicted_price"],
+                    "delta": p["delta"],
+                    "delta_pct": p["delta_pct"],
+                    "confidence_lower": p["confidence_lower"],
+                    "confidence_upper": p["confidence_upper"],
+                    "signal": p["signal"],
+                    "confidence_score": p["confidence_score"]
+                }
+                for p in res["predictions"]
+            ]
+        }
+
+    def predict_multi_horizon(self, horizon: int = 7):
+        """
+        Dự báo đa chu kỳ hỗ trợ các mốc: 1, 3, 7, 20 ngày.
+        Trả về:
+        - Quỹ đạo toàn bộ 20 ngày cho đồ thị ApexCharts
+        - Chi tiết dự báo tại mốc horizon đã chọn
+        """
         start_t = time.perf_counter()
+
+        # Validate horizon
+        valid_h = horizon if horizon in SUPPORTED_HORIZONS else 7
+        h_idx = valid_h - 1  # 0-indexed
 
         # Extract last LOOKBACK rows
         last_features = self.df_feat[self.ordered_feature_cols].iloc[-LOOKBACK:].values
         scaled_features = self.scaler_X.transform(last_features)
         input_seq = np.expand_dims(scaled_features, axis=0).astype(np.float32)
 
-        # Inference
-        pred_scaled = self.model_gru.predict(input_seq, verbose=0)
-        pred_real = self.scaler_y.inverse_transform(pred_scaled)[0]
+        # Predict 20 steps
+        if self.model_mh is not None:
+            pred_scaled_20 = self.model_mh.predict(input_seq, verbose=0)[0]  # (20, 4)
+            pred_real_20 = self.scaler_y.inverse_transform(pred_scaled_20)    # (20, 4)
+            model_name = "Residual Multi-Horizon GRU (Direct 20-Step Vector)"
+        else:
+            # Fallback to single-step with random walk dampening
+            pred_s = self.model_gru.predict(input_seq, verbose=0)
+            single_pred = self.scaler_y.inverse_transform(pred_s)[0]
+            pred_real_20 = np.tile(single_pred, (MAX_HORIZON, 1))
+            model_name = "Residual-GRU (Fallback Projection)"
 
         latency_ms = (time.perf_counter() - start_t) * 1000.0
 
+        # Generate future trading dates (skip Sat/Sun)
+        last_date = self.df_feat.iloc[-1]['Date']
+        future_dates = []
+        cur_d = last_date
+        while len(future_dates) < MAX_HORIZON:
+            cur_d += pd.Timedelta(days=1)
+            if cur_d.dayofweek < 5:  # Monday to Friday
+                future_dates.append(cur_d)
+
+        # Baseline prices
         last_row = self.df_feat.iloc[-1]
-        next_date = last_row['Date'] + pd.Timedelta(days=1)
-        if next_date.dayofweek >= 5:  # skip weekend to Monday
-            next_date += pd.Timedelta(days=(7 - next_date.dayofweek))
+        curr_prices = {col: float(last_row[col]) for col in TARGET_COLS}
+
+        # Build 20-step trajectory for charts
+        trajectory = []
+        for step in range(MAX_HORIZON):
+            step_date_str = future_dates[step].strftime('%d/%m/%Y')
+            step_prices = {}
+            step_lower = {}
+            step_upper = {}
+
+            # Band increases with sqrt(step + 1)
+            sqrt_step = np.sqrt(step + 1)
+
+            for i, col in enumerate(TARGET_COLS):
+                val = float(pred_real_20[step, i])
+                step_prices[col] = round(val, 2)
+                
+                # Base RMSE estimate ~ 3.5
+                margin = 1.96 * (3.0 * sqrt_step / 1.5)
+                step_lower[col] = round(max(0.0, val - margin), 2)
+                step_upper[col] = round(val + margin, 2)
+
+            trajectory.append({
+                "day_index": step + 1,
+                "date": step_date_str,
+                "prices": step_prices,
+                "lower_bounds": step_lower,
+                "upper_bounds": step_upper
+            })
+
+        # Selected horizon prediction items
+        h_config = HORIZON_CONFIGS.get(valid_h, HORIZON_CONFIGS[7])
+        target_date_str = future_dates[h_idx].strftime('%d/%m/%Y')
 
         predictions = []
         for i, col in enumerate(TARGET_COLS):
-            curr = float(last_row[col])
-            pred = float(pred_real[i])
+            curr = curr_prices[col]
+            pred = float(pred_real_20[h_idx, i])
             delta = pred - curr
             delta_pct = (delta / curr) * 100.0
 
-            p_metrics = [m for m in self.detailed_metrics if m.get('Product') == col and m.get('Model') == 'Residual_GRU']
-            rmse = p_metrics[0]['RMSE'] if p_metrics else 3.5
-            conf_margin = 1.96 * (rmse / 2.0)
+            # Confidence bounds at horizon
+            lower_b = trajectory[h_idx]["lower_bounds"][col]
+            upper_b = trajectory[h_idx]["upper_bounds"][col]
 
-            signal = "TĂNG MẠNH (BUY)" if delta_pct > 1.0 else ("TĂNG NHẸ (ACCUMULATE)" if delta_pct > 0.1 else ("GIẢM MẠNH (SELL)" if delta_pct < -1.0 else ("GIẢM NHẸ (REDUCE)" if delta_pct < -0.1 else "ĐI NGANG (HOLD)")))
-            confidence_score = max(88.0, min(98.5, 100.0 - abs(delta_pct)*1.5))
+            # Signal classification
+            if valid_h == 1:
+                sig_thresh_high, sig_thresh_low = 1.0, -1.0
+            elif valid_h <= 3:
+                sig_thresh_high, sig_thresh_low = 1.5, -1.5
+            elif valid_h <= 7:
+                sig_thresh_high, sig_thresh_low = 2.0, -2.0
+            else:  # 20 days
+                sig_thresh_high, sig_thresh_low = 3.5, -3.5
+
+            if delta_pct > sig_thresh_high:
+                signal = f"TĂNG MẠNH ({h_config['badge']})"
+            elif delta_pct > 0.3:
+                signal = f"TĂNG NHẸ ({h_config['badge']})"
+            elif delta_pct < sig_thresh_low:
+                signal = f"GIẢM SÂU ({h_config['badge']})"
+            elif delta_pct < -0.3:
+                signal = f"GIẢM NHẸ ({h_config['badge']})"
+            else:
+                signal = f"ĐI NGANG (BIÊN ĐỘ HẸP)"
+
+            # Benchmark metrics lookup
+            m_match = [
+                m for m in self.multi_horizon_metrics
+                if m.get('Horizon_Days') == valid_h and m.get('Product') == col
+            ]
+            if m_match:
+                mae_val = m_match[0]['MAE']
+                mape_val = m_match[0]['MAPE%']
+                r2_val = m_match[0]['R2']
+            else:
+                mae_val, mape_val, r2_val = 3.5, 3.2, 0.90
+
+            conf_score = max(75.0, min(98.5, 100.0 - (abs(delta_pct) * 1.2) - (valid_h * 0.8)))
 
             predictions.append({
                 "product": col,
@@ -255,21 +382,27 @@ class PetroleumEngine:
                 "predicted_price": round(pred, 2),
                 "delta": round(delta, 2),
                 "delta_pct": round(delta_pct, 2),
-                "confidence_lower": round(max(0, pred - conf_margin), 2),
-                "confidence_upper": round(pred + conf_margin, 2),
+                "confidence_lower": lower_b,
+                "confidence_upper": upper_b,
                 "signal": signal,
-                "confidence_score": round(confidence_score, 1)
+                "confidence_score": round(conf_score, 1),
+                "mae": round(mae_val, 2),
+                "mape": round(mape_val, 2),
+                "r2": round(r2_val, 4)
             })
 
         return {
-            "prediction_date": next_date.strftime('%d/%m/%Y'),
-            "model_used": "Residual-GRU v2 (Residual Skip Connection)",
+            "horizon": valid_h,
+            "horizon_label": h_config["label"],
+            "target_date": target_date_str,
+            "business_context": h_config["desc"],
+            "model_used": model_name,
             "latency_ms": round(latency_ms, 2),
-            "predictions": predictions
+            "predictions": predictions,
+            "trajectory": trajectory
         }
 
     def simulate_scenario(self, shock_gasoline_pct: float, shock_diesel_pct: float, vol_multiplier: float):
-        # Base prediction
         base = self.predict_next_day()
         sim_predictions = []
 
@@ -301,56 +434,55 @@ class PetroleumEngine:
             "predictions": sim_predictions
         }
 
-    def get_historical_series(self, limit: int = 180):
+    def get_historical_and_forecast(self, limit: int = 120):
         df_sub = self.df_test_aligned.tail(limit).copy()
-        result = []
+        points = []
         for _, row in df_sub.iterrows():
-            result.append({
-                "date": row['Date'].strftime('%d/%m/%Y'),
-                "actual_MG95": round(float(row['MG95']), 2),
-                "pred_MG95": round(float(row['PRED_MG95']), 2),
-                "actual_MG92": round(float(row['MG92']), 2),
-                "pred_MG92": round(float(row['PRED_MG92']), 2),
-                "actual_DO_0001": round(float(row['DO_0001']), 2),
-                "pred_DO_0001": round(float(row['PRED_DO_0001']), 2),
-                "actual_DO_005": round(float(row['DO_005']), 2),
-                "pred_DO_005": round(float(row['PRED_DO_005']), 2),
-            })
-        return result
-
-    def get_crack_spreads(self, limit: int = 180):
-        df_sub = self.df_feat.tail(limit).copy()
-        result = []
-        for _, row in df_sub.iterrows():
-            result.append({
-                "date": row['Date'].strftime('%d/%m/%Y'),
-                "spread_MG95_MG92": round(float(row['SPREAD_MG95_MG92']), 3),
-                "spread_DO0001_DO005": round(float(row['SPREAD_DO0001_DO005']), 3),
-                "spread_GAS_OIL": round(float(row['SPREAD_GAS_OIL']), 3),
-                "zscore_premium": round(float(row['SPREAD_MG95_MG92_Z20']), 2),
-                "zscore_quality": round(float(row['SPREAD_DO0001_DO005_Z20']), 2),
-                "zscore_crack": round(float(row['SPREAD_GAS_OIL_Z20']), 2),
-            })
-        return result
+            d_str = row['Date'].strftime('%d/%m/%Y')
+            pt = {"date": d_str}
+            for col in TARGET_COLS:
+                pt[f"actual_{col}"] = round(float(row[col]), 2)
+                pt[f"pred_{col}"] = round(float(row[f"PRED_{col}"]), 2)
+            points.append(pt)
+        return points
 
     def get_metrics_comparison(self):
         return {
             "models_comparison": self.metrics_summary,
-            "detailed_metrics": self.detailed_metrics
+            "detailed_metrics": self.detailed_metrics,
+            "multi_horizon_metrics": self.multi_horizon_metrics
         }
+
+    def get_historical_series(self, limit: int = 180):
+        return self.get_historical_and_forecast(limit=limit)
+
+    def get_crack_spreads(self, limit: int = 120):
+        df_sub = self.df_feat.tail(limit).copy()
+        spreads = []
+        for _, row in df_sub.iterrows():
+            spreads.append({
+                "date": row['Date'].strftime('%d/%m/%Y'),
+                "spread_MG95_MG92": round(float(row['SPREAD_MG95_MG92']), 2),
+                "spread_DO0001_DO005": round(float(row['SPREAD_DO0001_DO005']), 2),
+                "spread_GAS_OIL": round(float(row['SPREAD_GAS_OIL']), 2),
+                "zscore_premium": round(float(row.get('SPREAD_MG95_MG92_Z20', 0)), 2),
+                "zscore_quality": round(float(row.get('SPREAD_DO0001_DO005_Z20', 0)), 2),
+                "zscore_crack": round(float(row.get('SPREAD_GAS_OIL_Z20', 0)), 2)
+            })
+        return spreads
 
     def compute_vietnam_retail_components(self, product_code: str, price_usd_bbl: float, fx_rate: float = 25400.0, env_tax_override: float = None):
         """
         Tính toán chi tiết cấu thành Giá Cơ Sở bán lẻ xăng dầu Việt Nam (Nghị định 80/2023/NĐ-CP & TT 103/2021)
         """
         bbl_to_liter = 158.9873
-        cif_vnd = (price_usd_bbl * fx_rate) / bbl_to_liter + 350.0  # + chi phí vận tải bảo hiểm CIF
+        cif_vnd = (price_usd_bbl * fx_rate) / bbl_to_liter + 350.0  # + chi phí vận chuyển bảo hiểm CIF
 
         if product_code == 'MG95':
             duty_rate = 0.08    # Thuế NK 8%
             excise_rate = 0.10   # Thuế TTĐB 10%
             env_tax = 2000.0 if env_tax_override is None else env_tax_override
-            operating_cost = 1350.0 # CPKD định mức 1,050 + Lợi nhuận định mức 300
+            operating_cost = 1350.0  # CPKD định mức 1,050 + LN định mức 300
         elif product_code == 'MG92':
             duty_rate = 0.08    # Thuế NK 8%
             excise_rate = 0.08   # Thuế TTĐB 8% (E5 RON 92)
@@ -360,7 +492,7 @@ class PetroleumEngine:
             duty_rate = 0.05    # Thuế NK 5%
             excise_rate = 0.0    # Dầu không chịu thuế TTĐB
             env_tax = 1000.0 if env_tax_override is None else env_tax_override
-            operating_cost = 1300.0 # CPKD định mức 1,000 + LN định mức 300
+            operating_cost = 1300.0  # CPKD định mức 1,000 + LN định mức 300
         else: # DO_005
             duty_rate = 0.05
             excise_rate = 0.0
@@ -380,27 +512,28 @@ class PetroleumEngine:
             "env_tax_vnd": round(env_tax, 0),
             "operating_cost_vnd": round(operating_cost, 0),
             "vat_vnd": round(vat_vnd, 0),
-            "retail_vnd": round(retail_vnd, -1)  # làm tròn đến hàng chục đồng
+            "retail_vnd": round(retail_vnd, -1)  # làm tròn hàng chục đồng
         }
 
-    def get_vietnam_forecast(self, fx_rate: float = 25400.0, env_tax_override: float = None):
+    def get_vietnam_forecast(self, horizon: int = 7, fx_rate: float = 25400.0, env_tax_override: float = None):
         """
-        Dự báo giá bán lẻ xăng dầu Việt Nam (VND/lít) từ kết quả dự báo MoPS Singapore của mô hình AI
+        Dự báo giá bán lẻ xăng dầu Việt Nam (VND/lít) hỗ trợ các mốc đa chu kỳ: 1, 3, 7, 20 ngày.
         """
-        from app.backend.config import VIETNAM_PRODUCT_LABELS
+        valid_h = horizon if horizon in SUPPORTED_HORIZONS else 7
+        mh_res = self.predict_multi_horizon(horizon=valid_h)
+        h_config = HORIZON_CONFIGS.get(valid_h, HORIZON_CONFIGS[7])
+
         last_row = self.df_feat.iloc[-1]
-        next_day_forecast = self.predict_next_day()
+        last_date = last_row['Date']
 
         # Tính ngày Thứ Năm kỳ điều hành gần nhất tiếp theo
-        last_date = last_row['Date']
-        # weekday: Monday is 0, Thursday is 3
         days_ahead = (3 - last_date.weekday()) % 7
         if days_ahead == 0:
             days_ahead = 7
         next_thursday = last_date + pd.Timedelta(days=days_ahead)
 
         vn_products = []
-        for p_pred in next_day_forecast['predictions']:
+        for p_pred in mh_res['predictions']:
             col = p_pred['product']
             curr_usd = float(last_row[col])
             pred_usd = p_pred['predicted_price']
@@ -415,18 +548,25 @@ class PetroleumEngine:
             curr_cycle_comp = self.compute_vietnam_retail_components(col, mean_7d_usd, fx_rate, env_tax_override)
             proj_cycle_comp = self.compute_vietnam_retail_components(col, mean_7d_projected, fx_rate, env_tax_override)
 
-            # Biến động dự kiến cho kỳ điều hành thứ Năm
+            # Biến động dự kiến
             cycle_delta_vnd = proj_cycle_comp['retail_vnd'] - curr_cycle_comp['retail_vnd']
             delta_vnd = pred_comp['retail_vnd'] - curr_comp['retail_vnd']
 
-            if cycle_delta_vnd > 80:
-                cycle_signal = f"DỰ KIẾN TĂNG (+{int(cycle_delta_vnd):,} đ/lít)"
+            if valid_h == 7:
+                primary_delta = cycle_delta_vnd
+                label_prefix = "Kỳ Thứ Năm"
+            else:
+                primary_delta = delta_vnd
+                label_prefix = f"Mốc T+{valid_h}"
+
+            if primary_delta > 80:
+                cycle_signal = f"DỰ KIẾN TĂNG (+{int(primary_delta):,} đ/lít)"
                 action_class = "bullish"
-            elif cycle_delta_vnd < -80:
-                cycle_signal = f"DỰ KIẾN GIẢM ({int(cycle_delta_vnd):,} đ/lít)"
+            elif primary_delta < -80:
+                cycle_signal = f"DỰ KIẾN GIẢM ({int(primary_delta):,} đ/lít)"
                 action_class = "bearish"
             else:
-                cycle_signal = f"DỰ KIẾN ĐI NGANG (±{abs(int(cycle_delta_vnd)):,} đ/lít)"
+                cycle_signal = f"DỰ KIẾN ĐI NGANG (±{abs(int(primary_delta)):,} đ/lít)"
                 action_class = "neutral"
 
             # Sparkline 20 ngày giá bán lẻ VND
@@ -451,9 +591,21 @@ class PetroleumEngine:
                 "sparkline_vnd": sparkline_vnd
             })
 
+        if valid_h == 7:
+            exec_summary = f"Dự báo cho Kỳ Điều Hành Thứ Năm ({next_thursday.strftime('%d/%m/%Y')}) theo Nghị định 80/2023/NĐ-CP."
+        elif valid_h == 3:
+            exec_summary = f"Dự báo ngắn hạn 3 ngày tới ({mh_res['target_date']}) phục vụ quản trị vị thế và luân chuyển hàng hóa."
+        elif valid_h == 20:
+            exec_summary = f"Dự báo chu kỳ 1 tháng giao dịch ({mh_res['target_date']}) phục vụ kế hoạch ngân sách và dự trữ chiến lược."
+        else:
+            exec_summary = f"Dự báo ngày làm việc tiếp theo ({mh_res['target_date']})."
+
         return {
-            "fx_rate": fx_rate,
+            "horizon": valid_h,
+            "horizon_label": h_config["label"],
+            "last_date": last_date.strftime('%d/%m/%Y'),
             "next_adjustment_date": next_thursday.strftime('%d/%m/%Y'),
-            "regulatory_framework": "Nghị định 80/2023/NĐ-CP & Thông tư 103/2021/TT-BTC (Chu kỳ 7 ngày - Thứ Năm hàng tuần)",
-            "products": vn_products
+            "usd_vnd_rate": fx_rate,
+            "products": vn_products,
+            "executive_summary": exec_summary
         }

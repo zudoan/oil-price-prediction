@@ -41,6 +41,61 @@ class NextDayForecastResponse(BaseModel):
     latency_ms: float
     predictions: List[NextDayPredictionItem]
 
+class TrajectoryPoint(BaseModel):
+    day_index: int
+    date: str
+    prices: Dict[str, float]
+    lower_bounds: Dict[str, float]
+    upper_bounds: Dict[str, float]
+
+class MultiHorizonItem(BaseModel):
+    product: str
+    label: str
+    current_price: float
+    predicted_price: float
+    delta: float
+    delta_pct: float
+    confidence_lower: float
+    confidence_upper: float
+    signal: str
+    confidence_score: float
+    mae: float
+    mape: float
+    r2: float
+
+class MultiHorizonForecastResponse(BaseModel):
+    horizon: int
+    horizon_label: str
+    target_date: str
+    business_context: str
+    model_used: str
+    latency_ms: float
+    predictions: List[MultiHorizonItem]
+    trajectory: List[TrajectoryPoint]
+
+class VietnamForecastItem(BaseModel):
+    product_code: str
+    vietnam_name: str
+    singapore_usd_bbl: float
+    singapore_predicted_usd_bbl: float
+    current_retail_vnd: float
+    predicted_retail_vnd: float
+    delta_vnd: float
+    cycle_delta_vnd: float
+    cycle_signal: str
+    action_class: str
+    components: Dict[str, float]
+    sparkline_vnd: List[float]
+
+class VietnamForecastResponse(BaseModel):
+    horizon: int
+    horizon_label: str
+    last_date: str
+    next_adjustment_date: str
+    usd_vnd_rate: float
+    products: List[VietnamForecastItem]
+    executive_summary: str
+
 class HistoricalPoint(BaseModel):
     date: str
     actual_MG95: Optional[float] = None
@@ -72,6 +127,7 @@ class ModelMetricItem(BaseModel):
 class MetricsSummaryResponse(BaseModel):
     models_comparison: List[Dict[str, Any]]
     detailed_metrics: List[ModelMetricItem]
+    multi_horizon_metrics: Optional[List[Dict[str, Any]]] = None
 
 class SimulateRequest(BaseModel):
     shock_gasoline_pct: float = Field(0.0, ge=-20.0, le=20.0)

@@ -82,8 +82,14 @@ async def get_overview():
     return engine.get_market_overview()
 
 @app.get("/api/forecast/latest")
-async def get_latest_forecast():
+async def get_latest_forecast(horizon: int = Query(1, description="Mốc dự báo: 1, 3, 7, 20 ngày")):
+    if horizon > 1:
+        return engine.predict_multi_horizon(horizon=horizon)
     return engine.predict_next_day()
+
+@app.get("/api/forecast/multi-horizon")
+async def get_multi_horizon_forecast(horizon: int = Query(7, description="Mốc dự báo: 1, 3, 7, 20 ngày")):
+    return engine.predict_multi_horizon(horizon=horizon)
 
 @app.post("/api/forecast/simulate")
 async def simulate_forecast(req: SimulateRequest):
@@ -106,11 +112,13 @@ async def get_metrics():
     return engine.get_metrics_comparison()
 
 @app.get("/api/vietnam/forecast")
+@app.get("/api/vietnam-forecast")
 async def get_vietnam_forecast(
+    horizon: int = Query(7, description="Mốc dự báo: 1, 3, 7, 20 ngày"),
     fx_rate: float = Query(25400.0, ge=20000.0, le=35000.0, description="Tỷ giá USD/VND"),
     env_tax: float = Query(None, description="Thuế bảo vệ môi trường điều chỉnh (VND)")
 ):
-    return engine.get_vietnam_forecast(fx_rate=fx_rate, env_tax_override=env_tax)
+    return engine.get_vietnam_forecast(horizon=horizon, fx_rate=fx_rate, env_tax_override=env_tax)
 
 if __name__ == "__main__":
     import uvicorn
