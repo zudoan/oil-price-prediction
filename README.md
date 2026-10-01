@@ -73,10 +73,10 @@ $$\hat{y}_{t+h} = y_t + \Delta \hat{y}_{t+h}, \quad \forall h \in \{1, 2, \dots,
 
 | Mốc Dự Báo | Ý Nghĩa Ứng Dụng Thực Tiễn | MAE ($/bbl) | RMSE ($/bbl) | MAPE (%) | $R^2$ Score | Đánh giá |
 | :---: | :--- | :---: | :---: | :---: | :---: | :--- |
-| **T+1 (1 Ngày)** | Khớp lệnh & giao dịch phiên mai | 1.92 $ | 4.03 $ | 1.70 % | 0.9721 | ⭐ Tối ưu intraday |
-| **T+3 (3 Ngày)** | Lướt sóng & hedging ngắn hạn T+3 | 3.59 $ | 7.07 $ | 3.18 % | 0.9158 | ⭐ Quản trị vị thế |
-| **T+7 (7 Ngày)** | **Kỳ điều hành xăng dầu Thứ Năm (NĐ 80/2023)** | **5.73 $** | **11.14 $** | **5.01 %** | **0.7964** | 🎯 **Khuyên dùng điều hành** |
-| **T+20 (20 Ngày)** | Hoạch định ngân sách & tồn kho 1 tháng | 10.18 $ | 20.19 $ | 8.48 % | 0.3720 | 📦 Quản trị tồn kho |
+| **T+1 (1 Ngày)** | Khớp lệnh & giao dịch phiên mai | 1.92 $ | 4.03 $ | 1.70 % | 0.9721 |  Tối ưu intraday |
+| **T+3 (3 Ngày)** | Lướt sóng & hedging ngắn hạn T+3 | 3.59 $ | 7.07 $ | 3.18 % | 0.9158 |  Quản trị vị thế |
+| **T+7 (7 Ngày)** | **Kỳ điều hành xăng dầu Thứ Năm (NĐ 80/2023)** | **5.73 $** | **11.14 $** | **5.01 %** | **0.7964** |  **Khuyên dùng điều hành** |
+| **T+20 (20 Ngày)** | Hoạch định ngân sách & tồn kho 1 tháng | 10.18 $ | 20.19 $ | 8.48 % | 0.3720 |  Quản trị tồn kho |
 
 
 ---
@@ -115,7 +115,7 @@ Tập Test bao gồm dữ liệu từ **02/2024 đến 09/2026** (giai đoạn t
 
 ---
 
-##  4. Sơ đồ kiến trúc hệ thống (System Architecture)
+##  4. Sơ đồ kiến trúc hệ thống 
 
 ```mermaid
 flowchart TB
@@ -226,7 +226,7 @@ pip install -r requirements.txt
 
 ####  Cách 1: Click đúp trên Windows (Khuyên dùng)
 Nhấp đúp chuột trực tiếp vào file:
-👉 **`start_server.bat`**
+ **`start_server.bat`**
 
 ####  Cách 2: Chạy dòng lệnh
 ```bash
@@ -259,7 +259,7 @@ Sau khi khởi động thành công, mở trình duyệt và truy cập:
 
 ---
 
-## 🎓 8. Thông tin đồ án & Bản quyền (Credits & License)
+##  8. Thông tin đồ án & Bản quyền (Credits & License)
 
 * **Cơ sở đào tạo:** Trường Đại học Thủy Lợi (Thuyloi University - TLU)
 * **Khoa:** Khoa Công nghệ Thông tin
