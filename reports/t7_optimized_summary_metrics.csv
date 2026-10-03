@@ -1,0 +1,5 @@
+Horizon_Days,Horizon_Label,Avg_MAE,Avg_RMSE,Avg_MAPE%,Avg_R2
+1,T+1 (1 Ngay),1.98,4.04,1.76,0.9727
+3,T+3 (3 Ngay),3.61,7.19,3.2,0.9146
+7,T+7 (7 Ngay),5.78,11.2,5.06,0.7983
+20,T+20 (20 Ngay),10.38,20.42,8.64,0.3724
