@@ -1,6 +1,12 @@
 # app/backend/main.py
 import os
 import sys
+
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8')
+if hasattr(sys.stderr, 'reconfigure'):
+    sys.stderr.reconfigure(encoding='utf-8')
+
 from pathlib import Path
 from contextlib import asynccontextmanager
 
@@ -23,10 +29,10 @@ engine: PetroleumEngine = None
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global engine
-    print(f"🚀 Khởi động máy chủ {APP_NAME} v{VERSION}...")
+    print(f"[*] Khoi dong may chu {APP_NAME} v{VERSION}...")
     engine = PetroleumEngine.get_instance()
     yield
-    print("🛑 Đóng máy chủ hoàn tất.")
+    print("[*] Dong may chu hoan tat.")
 
 app = FastAPI(
     title=APP_NAME,

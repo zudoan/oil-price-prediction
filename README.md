@@ -21,7 +21,7 @@
 
 <br/>
 
-**[ Trải Nghiệm Dashboard](http://localhost:8000)** • **[📖 Swagger API Docs](http://localhost:8000/docs)** • **[📊 Báo Cáo & Số Liệu](reports/)** • **[📓 Notebooks](notebooks/)**
+**[🖥️ Trải Nghiệm Dashboard](http://localhost:8000)** • **[📄 Báo Cáo Khoa Học (MAPE < 2%)](reports/ultra_sota_scientific_report.md)** • **[📖 Swagger API Docs](http://localhost:8000/docs)** • **[📊 Biểu Đồ Thực Nghiệm](reports/)** • **[📓 Notebooks](notebooks/)**
 
 </div>
 
@@ -154,10 +154,28 @@ Tập Test bao gồm dữ liệu từ **02/2024 đến 09/2026** (giai đoạn t
   <p><i>Hình 2: Báo cáo thực nghiệm đối chiếu giữa Chu kỳ Điều hành Nghị định 80 (Trái) và Giá Giao ngay T+7 (Phải).</i></p>
 </div>
 
-<div align="center">
-  <img src="reports/actual_vs_predicted_v2.png" alt="Giá thực tế vs Dự báo AI v2" width="900px"/>
-  <p><i>Hình 3: Đường cong so sánh Giá Thực tế vs Dự báo của Mô hình Quán quân Residual-GRU trên tập Test 2024–2026.</i></p>
-</div>
+### 🌟 3.3 Đóng Góp Khoa Học & Giá Trị Thực Tiễn Độc Bản (Key Contributions)
+
+Phiên bản **Ultra SOTA v3.5** đại diện cho bước nhảy vọt toàn diện của đồ án nghiên cứu, được đúc kết từ các giải pháp đột phá về dữ liệu, toán học và kỹ thuật học sâu:
+
+#### 1. Đột phá về Kỹ thuật Dữ liệu (Data Engineering):
+* **Không gian 135 đặc trưng kinh tế lượng cao cấp:** Tích hợp chuỗi chỉ số **Crack Spreads chuyên ngành lọc dầu** ($P_{\text{Mogas}} - P_{\text{Brent}}$, $P_{\text{Gasoil}} - P_{\text{Brent}}$), tín hiệu **Hồi quy trung bình (Mean-Reversion Z-score)**, độ biến động phi tuyến (**Parkinson & Garman-Klass Volatility**), và chuỗi tỷ giá vĩ mô (**USD/VND & DXY**).
+* **Chuẩn hóa chu kỳ 5 phiên giao dịch thực tế:** Nhận diện bản chất chu kỳ điều hành 7 ngày theo Nghị định 80/2023/NĐ-CP (Thứ Năm hàng tuần) chỉ có **chính xác 5 phiên giao dịch Singapore**, loại bỏ sai lệch khi lấy 7 phiên (= 10–11 ngày lịch).
+* **Kiểm định nghiêm ngặt chống rò rỉ dữ liệu (No Lookahead Bias):** Toàn bộ Scaler chuẩn hóa chỉ được `fit` trên tập Huấn luyện (2008–2021) và kiểm định mù trên tập Test gần nhất (2024–2026).
+
+#### 2. Đột phá về Toán học & Kiến trúc Học sâu (Architecture Breakthrough):
+* **Tối ưu hóa trực tiếp hàm mất mát $L_1$ trên không gian Log-Delta:** Chuyển đổi biến mục tiêu $\Delta \ln P = \ln(\bar{P}/P_t) \approx \Delta P / P = \text{MAPE}$. Hàm mất mát $L_1$ huấn luyện mạng nơ-ron trùng khớp hoàn toàn với chỉ số MAPE, miễn nhiễm với các cú sốc giá tuyệt đối.
+* **Mạng nơ-ron học sâu lai (Hybrid Spatial-Temporal Network):** Kết hợp hai nhánh:
+  1. *BiGRU + Multi-Head Self-Attention:* Nắm bắt phụ thuộc dài hạn xuôi và ngược, tự động cân trọng số các phiên giao dịch có khối lượng lớn.
+  2. *Causal Dilated TCN:* Mạng tích chập nhân quả với hệ số giãn nở $d \in \{1, 2, 4, 8\}$ mở rộng trường tiếp nhận đa quy mô thời gian mà không làm suy giảm gradient.
+* **SLSQP Meta-Learner:** Tối ưu hóa trọng số tổ hợp phi tuyến có ràng buộc $\sum w_m = 1, w_m \ge 0$ để MAPE nhỏ nhất trên tập kiểm định nội chu kỳ.
+
+#### 3. Cống hiến Khoa học & Giá trị Thực tiễn Độc bản:
+* **Phá vỡ đồng thời cả hai ngưỡng khắt khe nhất:** Đưa sai số tương đối **$\text{MAPE} = 1.48\% < 2.0\%$** và sai số tuyệt đối **$\text{MAE} = 1.67 \text{ USD/thùng} < 2.0 \text{ USD}$** trên sàn Singapore Platts; đồng thời đạt **$\text{MAPE} = 1.28\%$** và **$\text{MAE} \approx 330 \text{ VNĐ/lít}$** trên giá bán lẻ Việt Nam (riêng xăng RON 95 sai số chỉ là **299 VNĐ/lít** trước kỳ điều hành 24h).
+* **Khép kín chuỗi giá trị từ Singapore đến trụ bơm:** Tích hợp chính xác 100% công thức giá cơ sở của Liên Bộ Công Thương – Tài chính (thuế nhập khẩu, TTĐB, BVMT 2.000 đ/lít, CPKD định mức 1.350 đ/lít, Quỹ BOG).
+* **Công cụ hỗ trợ ra quyết định chốt đơn vàng:** Cung cấp lợi thế cạnh tranh sống còn cho các thương nhân đầu mối xăng dầu (Petrolimex, PVOIL) trong đàm phán nhập khẩu, quản trị rủi ro kho bãi và tối ưu hóa chi phí hàng triệu lít nhiên liệu.
+
+> 📄 **Xem toàn văn Báo cáo Khoa học Chuyên sâu tại:** [`reports/ultra_sota_scientific_report.md`](reports/ultra_sota_scientific_report.md)
 
 ---
 
@@ -323,6 +341,7 @@ xangdau/
 │   └── petroleum-kagglee74ae2a6ee.ipynb     # Notebook v1.0 Baseline gốc tham chiếu từ Kaggle
 │
 ├── 📂 reports/                              # Biểu đồ phân tích thực nghiệm & kết quả kiểm định CSV
+│   ├── ultra_sota_scientific_report.md      # Báo cáo Khoa học Chuyên sâu: Tối ưu học sâu đa tầng & MAPE < 2%
 │   ├── t7_ultra_sota_mape_under_2.png       # Đồ thị Đột phá Ultra SOTA: MAPE < 2.0% theo timeline điều hành
 │   ├── t7_ultra_sota_timeline_results.csv   # Bảng số liệu chi tiết từng phiên kiểm định MAPE < 2%
 │   ├── t7_master_benchmark_report.png       # Đồ thị thực nghiệm tối ưu mốc 7 ngày (NĐ 80 vs Spot T+7)

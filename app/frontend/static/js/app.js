@@ -206,7 +206,7 @@ async function loadMultiHorizonForecast(horizon = 7) {
         if (targetDateEl) targetDateEl.textContent = data.target_date;
 
         const contextDescEl = document.getElementById('hzContextDesc');
-        if (contextDescEl) contextDescEl.textContent = `🎯 ${data.business_context}`;
+        if (contextDescEl) contextDescEl.textContent = data.business_context;
 
         // Update Singapore KPI Cards
         data.predictions.forEach(p => {
@@ -233,7 +233,7 @@ async function loadMultiHorizonForecast(horizon = 7) {
             const trendBadge = card.querySelector('.trend-badge');
             if (trendBadge) {
                 const isPos = p.delta >= 0;
-                trendBadge.textContent = isPos ? `▲ ${p.signal}` : `▼ ${p.signal}`;
+                trendBadge.innerHTML = `<span class="trend-arrow">${isPos ? '↑' : '↓'}</span> ${p.signal}`;
                 trendBadge.className = `trend-badge ${isPos ? 'trend-bullish' : 'trend-bearish'}`;
             }
 
@@ -621,7 +621,7 @@ async function loadVietnamForecast(fxRate = 25400) {
         // Update banner text
         const bannerSub = document.querySelector('.vn-cycle-title p');
         if (bannerSub) {
-            bannerSub.textContent = `🎯 ${data.executive_summary} (Kỳ Thứ Năm: ${data.next_adjustment_date} · Tỷ giá: ${data.usd_vnd_rate.toLocaleString('vi-VN')} VND/USD)`;
+            bannerSub.textContent = `${data.executive_summary} (Kỳ Thứ Năm: ${data.next_adjustment_date} · Tỷ giá: ${data.usd_vnd_rate.toLocaleString('vi-VN')} VND/USD)`;
         }
 
         // Update each product card in Vietnam grid
